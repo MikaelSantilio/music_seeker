@@ -47,7 +47,7 @@ class SearchRequest(BaseModel):
     """Schema for search requests"""
     query: str = Field(..., description="Search query", min_length=1, max_length=500)
     limit: Optional[int] = Field(10, description="Maximum number of results", ge=1, le=50)
-    similarity_threshold: Optional[float] = Field(0.5, description="Minimum similarity score", ge=0.0, le=1.0)
+    similarity_threshold: Optional[float] = Field(0.0, description="Minimum similarity score", ge=0.0, le=1.0)
 
 
 class SearchResponse(BaseModel):

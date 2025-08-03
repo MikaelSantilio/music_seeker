@@ -65,7 +65,7 @@ class EmbeddingService:
         db: Session, 
         query_embedding: List[float], 
         limit: int = 10,
-        threshold: float = 0.7
+        threshold: float = 0.0
     ) -> List[Song]:
         """
         Search for songs similar to the query embedding using cosine similarity
@@ -84,15 +84,24 @@ class EmbeddingService:
             embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
             
             # SQL query using pgvector cosine similarity
-            # Using direct string interpolation to avoid parameter issues
-            sql_query = f"""
-                SELECT *, (1 - (embedding <=> '{embedding_str}'::vector)) as similarity_score
-                FROM songs 
-                WHERE embedding IS NOT NULL
-                AND (1 - (embedding <=> '{embedding_str}'::vector)) >= {threshold}
-                ORDER BY embedding <=> '{embedding_str}'::vector
-                LIMIT {limit}
-            """
+            # Only apply threshold filter if threshold > 0
+            if threshold > 0:
+                sql_query = f"""
+                    SELECT *, (1 - (embedding <=> '{embedding_str}'::vector)) as similarity_score
+                    FROM songs 
+                    WHERE embedding IS NOT NULL
+                    AND (1 - (embedding <=> '{embedding_str}'::vector)) >= {threshold}
+                    ORDER BY embedding <=> '{embedding_str}'::vector
+                    LIMIT {limit}
+                """
+            else:
+                sql_query = f"""
+                    SELECT *, (1 - (embedding <=> '{embedding_str}'::vector)) as similarity_score
+                    FROM songs 
+                    WHERE embedding IS NOT NULL
+                    ORDER BY embedding <=> '{embedding_str}'::vector
+                    LIMIT {limit}
+                """
             
             result = db.execute(text(sql_query))
             
