@@ -26,7 +26,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql+psycopg2://musicseeker:musicseeker123@db:5432/musicseeker
+      - DATABASE_URL=postgresql+psycopg://musicseeker:musicseeker123@db:5432/musicseeker
     volumes:
       - ./data:/app/data
       - ./.env:/app/.env
