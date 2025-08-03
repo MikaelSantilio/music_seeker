@@ -3,25 +3,35 @@ Main FastAPI application for MusicSeeker
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uvicorn
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from app.config import settings
 from app.db.database import get_db, create_tables
 from app.api.routes import songs, search, stats
+from app.middleware.security import SecurityMiddleware, add_process_time_header, limit_request_size
+from app.utils.logging import setup_logging
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan events for FastAPI application"""
     # Startup
+    setup_logging()  # Initialize secure logging
     create_tables()
     yield
     # Shutdown (if needed)
 
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 # Create FastAPI application
 app = FastAPI(
@@ -33,14 +43,23 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware
+# Set up rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Add CORS middleware - CONFIGURAÇÃO MAIS SEGURA
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=["http://localhost:3000", "http://localhost:8080"],  # Específicos
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST"],  # Apenas métodos necessários
     allow_headers=["*"],
 )
+
+# Add security middleware
+app.middleware("http")(limit_request_size)
+app.middleware("http")(add_process_time_header)
+app.add_middleware(SecurityMiddleware)
 
 # Include API routes
 app.include_router(songs.router, prefix="/api/v1", tags=["Songs"])

@@ -2,10 +2,13 @@
 Search API endpoints for semantic search
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
 import time
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.db.database import get_db
 from app.models.song import Song
@@ -13,19 +16,22 @@ from app.services.embedding_service import EmbeddingService
 from app.api.schemas import SearchRequest, SearchResponse, SongSearchResult, SongResponse
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/search", response_model=SearchResponse)
+@limiter.limit("10/minute")  # Máximo 10 buscas por minuto por IP
 async def semantic_search(
-    request: SearchRequest,
+    request: Request,
+    search_request: SearchRequest,
     db: Session = Depends(get_db)
 ):
     """
     Perform semantic search on song lyrics using OpenAI embeddings
     
     - **query**: Search query (e.g., "love and heartbreak", "party vibes")
-    - **limit**: Maximum number of results (1-50, default: 10)
-    - **similarity_threshold**: Minimum similarity score (0.0-1.0, default: 0.5)
+    - **limit**: Maximum number of results (1-20, default: 10) - REDUZIDO POR SEGURANÇA
+    - **similarity_threshold**: Minimum similarity score (0.0-1.0, default: 0.0)
     
     Returns songs ranked by semantic similarity to your query.
     """
@@ -46,7 +52,7 @@ async def semantic_search(
         
         # Generate query embedding
         try:
-            query_embedding = embedding_service.generate_query_embedding(request.query)
+            query_embedding = embedding_service.generate_query_embedding(search_request.query)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -57,8 +63,8 @@ async def semantic_search(
         results = embedding_service.search_similar_songs(
             db=db,
             query_embedding=query_embedding,
-            limit=request.limit,
-            threshold=request.similarity_threshold
+            limit=search_request.limit,
+            threshold=search_request.similarity_threshold
         )
         
         # Convert results to response format
@@ -73,7 +79,7 @@ async def semantic_search(
         processing_time = (time.time() - start_time) * 1000
         
         return SearchResponse(
-            query=request.query,
+            query=search_request.query,
             results=search_results,
             total_results=len(search_results),
             processing_time_ms=round(processing_time, 2)

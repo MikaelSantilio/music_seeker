@@ -2,9 +2,10 @@
 Pydantic schemas for API requests and responses
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional
 from datetime import datetime
+import re
 
 
 class SongBase(BaseModel):
@@ -45,9 +46,28 @@ class SongSearchResult(BaseModel):
 
 class SearchRequest(BaseModel):
     """Schema for search requests"""
-    query: str = Field(..., description="Search query", min_length=1, max_length=500)
-    limit: Optional[int] = Field(10, description="Maximum number of results", ge=1, le=50)
+    query: str = Field(..., description="Search query", min_length=1, max_length=100)
+    limit: Optional[int] = Field(10, description="Maximum number of results", ge=1, le=20)
     similarity_threshold: Optional[float] = Field(0.0, description="Minimum similarity score", ge=0.0, le=1.0)
+    
+    @validator('query')
+    def validate_query(cls, v):
+        """Validate search query for security"""
+        if not v or not v.strip():
+            raise ValueError('Query cannot be empty')
+        
+        # Remove potential SQL injection patterns
+        dangerous_patterns = [';', '--', '/*', '*/', 'xp_', 'sp_', 'DROP', 'DELETE', 'INSERT', 'UPDATE']
+        query_upper = v.upper()
+        for pattern in dangerous_patterns:
+            if pattern in query_upper:
+                raise ValueError(f'Query contains forbidden pattern: {pattern}')
+        
+        # Allow only safe characters
+        if not re.match(r'^[a-zA-Z0-9\s\-\'\".,!?()&]+$', v):
+            raise ValueError('Query contains invalid characters')
+            
+        return v.strip()
 
 
 class SearchResponse(BaseModel):

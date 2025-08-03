@@ -55,8 +55,8 @@ def test_configuration():
         print(f"   - Embedding dimensions: {settings.EMBEDDING_DIMENSIONS}")
         
         # Check if OpenAI API key is set
-        if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "sk-your-openai-api-key-here":
-            print(f"   - OpenAI API key: ✅ Set (ending in ...{settings.OPENAI_API_KEY[-4:]})")
+        if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "REPLACE_WITH_YOUR_NEW_API_KEY_FROM_OPENAI_PLATFORM":
+            print(f"   - OpenAI API key: ✅ Set (***hidden***)")
             return True
         else:
             print(f"   - OpenAI API key: ❌ Not set or using placeholder")
