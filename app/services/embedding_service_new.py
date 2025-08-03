@@ -84,17 +84,23 @@ class EmbeddingService:
             embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
             
             # SQL query using pgvector cosine similarity
-            # Using direct string interpolation to avoid parameter issues
-            sql_query = f"""
-                SELECT *, (1 - (embedding <=> '{embedding_str}'::vector)) as similarity_score
+            query = text("""
+                SELECT *, (1 - (embedding <=> :query_embedding::vector)) as similarity_score
                 FROM songs 
                 WHERE embedding IS NOT NULL
-                AND (1 - (embedding <=> '{embedding_str}'::vector)) >= {threshold}
-                ORDER BY embedding <=> '{embedding_str}'::vector
-                LIMIT {limit}
-            """
+                AND (1 - (embedding <=> :query_embedding::vector)) >= :threshold
+                ORDER BY embedding <=> :query_embedding::vector
+                LIMIT :limit
+            """)
             
-            result = db.execute(text(sql_query))
+            result = db.execute(
+                query, 
+                {
+                    "query_embedding": embedding_str,
+                    "threshold": threshold,
+                    "limit": limit
+                }
+            )
             
             songs = []
             for row in result:

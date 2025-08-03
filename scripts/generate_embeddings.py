@@ -8,9 +8,11 @@ using the text-embedding-3-small model and saves them to the database.
 import os
 import sys
 import time
+import traceback
+import requests
+import json
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from openai import OpenAI
 
 # Add app directory to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -27,16 +29,33 @@ class EmbeddingGenerator:
     
     def __init__(self):
         """Initialize the embedding generator"""
-        # Validate OpenAI API key
-        settings.validate()
-        
-        # Initialize OpenAI client
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = settings.EMBEDDING_MODEL
-        self.dimensions = settings.EMBEDDING_DIMENSIONS
-        
-        print(f"Initialized EmbeddingGenerator with model: {self.model}")
-        print(f"Embedding dimensions: {self.dimensions}")
+        try:
+            # Validate OpenAI API key
+            settings.validate()
+            
+            # Set up API configuration
+            self.api_key = settings.OPENAI_API_KEY
+            self.model = settings.EMBEDDING_MODEL
+            self.dimensions = settings.EMBEDDING_DIMENSIONS
+            self.api_url = "https://api.openai.com/v1/embeddings"
+            
+            # Set up headers for API requests
+            self.headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json"
+            }
+            
+            print(f"Initialized EmbeddingGenerator with model: {self.model}")
+            print(f"Embedding dimensions: {self.dimensions}")
+            print(f"API URL: {self.api_url}")
+            
+        except Exception as e:
+            print(f"❌ Error initializing EmbeddingGenerator:")
+            print(f"   Error: {str(e)}")
+            print(f"   Error type: {type(e).__name__}")
+            print(f"   Traceback:")
+            traceback.print_exc()
+            raise
     
     def get_songs_without_embeddings(self, db: Session, limit: Optional[int] = None) -> List[Song]:
         """
@@ -67,16 +86,32 @@ class EmbeddingGenerator:
             List of float values representing the embedding
         """
         try:
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=text,
-                dimensions=self.dimensions
+            payload = {
+                "model": self.model,
+                "input": text,
+                "dimensions": self.dimensions
+            }
+            
+            response = requests.post(
+                self.api_url,
+                headers=self.headers,
+                json=payload,
+                timeout=30
             )
             
-            return response.data[0].embedding
+            response.raise_for_status()  # Raise exception for HTTP errors
             
+            data = response.json()
+            return data['data'][0]['embedding']
+            
+        except requests.exceptions.RequestException as e:
+            print(f"❌ HTTP error generating embedding: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"   Response status: {e.response.status_code}")
+                print(f"   Response text: {e.response.text}")
+            raise
         except Exception as e:
-            print(f"Error generating embedding: {e}")
+            print(f"❌ Error generating embedding: {e}")
             raise
     
     def generate_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
@@ -90,16 +125,32 @@ class EmbeddingGenerator:
             List of embeddings
         """
         try:
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=texts,
-                dimensions=self.dimensions
+            payload = {
+                "model": self.model,
+                "input": texts,
+                "dimensions": self.dimensions
+            }
+            
+            response = requests.post(
+                self.api_url,
+                headers=self.headers,
+                json=payload,
+                timeout=60  # Longer timeout for batch requests
             )
             
-            return [data.embedding for data in response.data]
+            response.raise_for_status()
             
+            data = response.json()
+            return [item['embedding'] for item in data['data']]
+            
+        except requests.exceptions.RequestException as e:
+            print(f"❌ HTTP error generating batch embeddings: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"   Response status: {e.response.status_code}")
+                print(f"   Response text: {e.response.text}")
+            raise
         except Exception as e:
-            print(f"Error generating batch embeddings: {e}")
+            print(f"❌ Error generating batch embeddings: {e}")
             raise
     
     def process_songs_batch(self, db: Session, songs: List[Song], batch_size: int = 50) -> int:
@@ -230,7 +281,11 @@ def main():
             db.close()
             
     except Exception as e:
-        print(f"❌ Error in embedding generation pipeline: {e}")
+        print(f"❌ Error in embedding generation pipeline:")
+        print(f"   Error: {str(e)}")
+        print(f"   Error type: {type(e).__name__}")
+        print(f"   Traceback:")
+        traceback.print_exc()
         sys.exit(1)
 
 
