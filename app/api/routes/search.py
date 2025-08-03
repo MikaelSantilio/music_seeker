@@ -19,7 +19,14 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
-@router.post("/search", response_model=SearchResponse)
+@router.post(
+    "/search", 
+    response_model=SearchResponse,
+    summary="🔍 Busca Semântica de Músicas",
+    description="Encontre músicas usando inteligência artificial baseada no significado e sentimento da consulta",
+    response_description="Lista de músicas ordenadas por similaridade semântica",
+    tags=["🔍 Busca Semântica"]
+)
 @limiter.limit("10/minute")  # Máximo 10 buscas por minuto por IP
 async def semantic_search(
     request: Request,
@@ -27,13 +34,45 @@ async def semantic_search(
     db: Session = Depends(get_db)
 ):
     """
-    Perform semantic search on song lyrics using OpenAI embeddings
+    ## 🎯 Busca Semântica Inteligente
     
-    - **query**: Search query (e.g., "love and heartbreak", "party vibes")
-    - **limit**: Maximum number of results (1-20, default: 10) - REDUZIDO POR SEGURANÇA
-    - **similarity_threshold**: Minimum similarity score (0.0-1.0, default: 0.0)
+    Encontre músicas usando **linguagem natural** e **inteligência artificial**!
     
-    Returns songs ranked by semantic similarity to your query.
+    ### 💡 Como Funciona
+    
+    1. **Processamento IA**: Sua consulta é convertida em embedding usando OpenAI
+    2. **Busca Vetorial**: Encontramos músicas semanticamente similares usando pgvector
+    3. **Ranking Inteligente**: Resultados ordenados por score de similaridade
+    
+    ### 🎵 Exemplos de Consulta
+    
+    ```
+    "nostalgia and lost love"     → Encontra "Memories" do Maroon 5
+    "party vibes and celebration" → Encontra músicas animadas  
+    "heartbreak and sadness"      → Encontra baladas emotivas
+    "summer and freedom"          → Encontra hits de verão
+    "motivation and strength"     → Encontra músicas inspiradoras
+    ```
+    
+    ### 📊 Parâmetros
+    
+    - **query**: Descreva o sentimento, tema ou mood que você procura
+    - **limit**: Número máximo de resultados (1-20, padrão: 10)  
+    - **similarity_threshold**: Score mínimo de similaridade (0.0-1.0, padrão: 0.0)
+    
+    ### 🛡️ Limitações de Segurança
+    
+    - **Rate Limit**: 10 consultas por minuto por IP
+    - **Tamanho**: Consulta limitada a 100 caracteres
+    - **Validação**: Proteção contra SQL injection e caracteres perigosos
+    
+    ### 📈 Score de Similaridade
+    
+    - **0.8-1.0**: Muito similar (match quase perfeito)
+    - **0.6-0.8**: Similaridade alta (bom match)  
+    - **0.4-0.6**: Similaridade moderada (relevante)
+    - **0.2-0.4**: Similaridade baixa (pode ser relevante)
+    - **0.0-0.2**: Pouco similar (provavelmente não relevante)
     """
     start_time = time.time()
     
