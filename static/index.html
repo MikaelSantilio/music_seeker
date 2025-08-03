@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 MusicSeeker - Busca Semântica de Músicas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+
+        .logo {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 50px;
+            padding: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            padding: 20px 60px 20px 25px;
+            font-size: 18px;
+            background: transparent;
+            color: #333;
+        }
+
+        .search-input::placeholder {
+            color: #999;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 20px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            border-color: #667eea;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            border-color: #5a67d8;
+        }
+
+        .suggestions {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .suggestions-label {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .suggestion-tags {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .tag:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-1px);
+        }
+
+        .results-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: none;
+        }
+
+        .results-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .new-search-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .new-search-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .result-item {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .result-item:hover {
+            background: #f8f9fa;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .song-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .song-details {
+            flex: 1;
+        }
+
+        .song-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .song-artist {
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .song-preview {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .match-score {
+            background: #667eea;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .logo {
+                font-size: 2.5rem;
+            }
+            
+            .song-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .match-score {
+                align-self: flex-start;
+            }
+
+            .results-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo">🎵 MusicSeeker</h1>
+            <p class="subtitle">Busca Semântica de Músicas com Inteligência Artificial</p>
+        </div>
+
+        <div class="search-box">
+            <input type="text" 
+                   class="search-input" 
+                   id="searchInput" 
+                   placeholder="Digite sua busca... (ex: heartbreak songs, party vibes, nostalgia)"
+                   autocomplete="off">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" id="searchBtn" disabled>
+                <i class="fas fa-search"></i> Buscar Músicas
+            </button>
+        </div>
+
+        <div class="suggestions">
+            <div class="suggestions-label">💡 Sugestões populares:</div>
+            <div class="suggestion-tags">
+                <span class="tag" data-query="heartbreak and sadness">#heartbreak</span>
+                <span class="tag" data-query="dancing and party vibes">#party-vibes</span>
+                <span class="tag" data-query="love and romance">#love-songs</span>
+                <span class="tag" data-query="motivation and success">#motivation</span>
+                <span class="tag" data-query="nostalgia and memories">#nostalgia</span>
+            </div>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="results-header" id="resultsHeader">
+                <span>🎵 Resultados da busca</span>
+                <button class="new-search-btn" id="newSearchBtn">
+                    <i class="fas fa-search"></i> Nova Busca
+                </button>
+            </div>
+            <div id="resultsContent">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsHeader = document.getElementById('resultsHeader');
+        const resultsContent = document.getElementById('resultsContent');
+        const newSearchBtn = document.getElementById('newSearchBtn');
+
+        // Enable/disable search button based on input
+        searchInput.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            searchBtn.disabled = !value;
+        });
+
+        // Search functionality
+        async function performSearch(query = null) {
+            const searchQuery = query || searchInput.value.trim();
+            
+            if (!searchQuery) return;
+
+            // Show loading
+            resultsContainer.style.display = 'block';
+            resultsHeader.querySelector('span').textContent = `🔍 Buscando por "${searchQuery}"...`;
+            resultsContent.innerHTML = `
+                <div class="loading">
+                    <span class="spinner"></span>
+                    Procurando músicas semelhantes com IA...
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/v1/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        query: searchQuery, 
+                        limit: 5
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data, searchQuery);
+
+            } catch (error) {
+                console.error('Search error:', error);
+                resultsContent.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 15px;"></i>
+                        <h3>Erro na busca</h3>
+                        <p>${error.message}</p>
+                        <button class="btn btn-primary" onclick="performSearch('${searchQuery}')" style="margin-top: 15px;">
+                            <i class="fas fa-redo"></i> Tentar Novamente
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function displayResults(data, query) {
+            const resultCount = data.results ? data.results.length : 0;
+            const totalResults = data.total_results || resultCount;
+            
+            resultsHeader.querySelector('span').textContent = `🎵 ${totalResults} resultados para "${query}"`;
+
+            if (!data.results || data.results.length === 0) {
+                resultsContent.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-music" style="font-size: 2rem; color: #ccc; margin-bottom: 15px;"></i>
+                        <h3>Nenhuma música encontrada</h3>
+                        <p>Tente usar outras palavras-chave ou termos mais genéricos.</p>
+                        <br>
+                        <p><strong>Dicas:</strong></p>
+                        <ul style="text-align: left; color: #666; max-width: 300px; margin: 0 auto;">
+                            <li>Use sentimentos: "tristeza", "alegria", "nostalgia"</li>
+                            <li>Descreva situações: "festa", "relaxar", "treino"</li>
+                            <li>Combine conceitos: "amor e perda", "verão e liberdade"</li>
+                        </ul>
+                    </div>
+                `;
+                return;
+            }
+
+            const resultsHTML = data.results.map(result => {
+                const song = result.song || result;
+                const similarity = result.similarity || result.similarity_score || 0;
+                
+                // CORREÇÃO: similarity já vem como (1 - distance), então maior = melhor
+                // similarity 0.49 = 49% de similaridade (não precisa de 1 - similarity)
+                const matchPercent = Math.round(similarity * 100);
+                
+                // Definir cor baseada na qualidade do match
+                let matchColor = '#e74c3c'; // Vermelho para baixa
+                let matchLabel = 'Baixa';
+                
+                if (matchPercent >= 70) {
+                    matchColor = '#27ae60'; // Verde para excelente
+                    matchLabel = 'Excelente';
+                } else if (matchPercent >= 50) {
+                    matchColor = '#f39c12'; // Laranja para boa
+                    matchLabel = 'Boa';
+                } else if (matchPercent >= 30) {
+                    matchColor = '#e67e22'; // Laranja escuro para média
+                    matchLabel = 'Média';
+                }
+                
+                const preview = song.lyrics ? song.lyrics.substring(0, 150).replace(/\n/g, ' ').trim() + '...' : 'Letra não disponível';
+
+                return `
+                    <div class="result-item">
+                        <div class="song-info">
+                            <div class="song-details">
+                                <div class="song-title">♪ ${escapeHtml(song.track_name || 'Título não disponível')}</div>
+                                <div class="song-artist">👤 ${escapeHtml(song.artist_name || 'Artista não disponível')}</div>
+                                ${song.year ? `<div style="color: #999; font-size: 14px; margin-bottom: 8px;">📅 ${song.year}</div>` : ''}
+                                <div class="song-preview">"${escapeHtml(preview)}"</div>
+                            </div>
+                            <div class="match-score" style="background: ${matchColor};">
+                                📊 ${matchPercent}%<br>
+                                <small style="font-size: 11px; opacity: 0.9;">${matchLabel}</small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            resultsContent.innerHTML = resultsHTML;
+        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', () => performSearch());
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !searchBtn.disabled) {
+                performSearch();
+            }
+        });
+
+        newSearchBtn.addEventListener('click', () => {
+            resultsContainer.style.display = 'none';
+            searchInput.focus();
+            searchInput.select();
+        });
+
+        // Suggestion tags
+        document.querySelectorAll('.tag').forEach(tag => {
+            tag.addEventListener('click', () => {
+                const query = tag.dataset.query;
+                searchInput.value = query;
+                searchBtn.disabled = false;
+                performSearch(query);
+            });
+        });
+
+        // Utility function
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Focus on input when page loads
+        searchInput.focus();
+
+        // Load stats for display
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/v1/stats');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`📊 Database: ${data.total_songs} songs, ${data.total_artists} artists`);
+                }
+            } catch (error) {
+                console.warn('Could not load stats:', error);
+            }
+        }
+
+        // Initialize
+        loadStats();
+    </script>
+</body>
+</html>

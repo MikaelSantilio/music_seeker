@@ -6,7 +6,7 @@ import requests
 import json
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import select
 
 from app.config import settings
 from app.models.song import Song
@@ -80,45 +80,37 @@ class EmbeddingService:
             List of similar songs ordered by similarity score
         """
         try:
-            # Convert embedding to PostgreSQL array format
-            embedding_str = '[' + ','.join(map(str, query_embedding)) + ']'
+            # Usar SQLAlchemy ORM com pgvector - MUITO MAIS SEGURO
+            from sqlalchemy import func
             
-            # SQL query using pgvector cosine similarity
-            # Only apply threshold filter if threshold > 0
+            # Query base com SQLAlchemy ORM
+            query = select(
+                Song,
+                (1 - Song.embedding.cosine_distance(query_embedding)).label('similarity_score')
+            ).where(
+                Song.embedding.is_not(None)
+            )
+            
+            # Aplicar filtro de threshold se necessário
             if threshold > 0:
-                sql_query = f"""
-                    SELECT *, (1 - (embedding <=> '{embedding_str}'::vector)) as similarity_score
-                    FROM songs 
-                    WHERE embedding IS NOT NULL
-                    AND (1 - (embedding <=> '{embedding_str}'::vector)) >= {threshold}
-                    ORDER BY embedding <=> '{embedding_str}'::vector
-                    LIMIT {limit}
-                """
-            else:
-                sql_query = f"""
-                    SELECT *, (1 - (embedding <=> '{embedding_str}'::vector)) as similarity_score
-                    FROM songs 
-                    WHERE embedding IS NOT NULL
-                    ORDER BY embedding <=> '{embedding_str}'::vector
-                    LIMIT {limit}
-                """
+                query = query.where(
+                    (1 - Song.embedding.cosine_distance(query_embedding)) >= threshold
+                )
             
-            result = db.execute(text(sql_query))
+            # Ordenar por similaridade e limitar resultados  
+            # CORREÇÃO: Ordenar por similarity_score decrescente (maior = melhor match)
+            from sqlalchemy import desc
+            query = query.order_by(
+                desc((1 - Song.embedding.cosine_distance(query_embedding)))
+            ).limit(limit)
+            
+            # Executar query
+            result = db.execute(query)
             
             songs = []
             for row in result:
-                song = Song(
-                    id=row.id,
-                    track_name=row.track_name,
-                    artist_name=row.artist_name,
-                    album=row.album,
-                    year=row.year,
-                    date=row.date,
-                    lyrics=row.lyrics,
-                    embedding=row.embedding,
-                    created_at=row.created_at
-                )
-                # Add similarity score as an attribute
+                song = row.Song  # Acessar o objeto Song da tupla
+                # Adicionar similarity score como atributo
                 song.similarity_score = row.similarity_score
                 songs.append(song)
             
