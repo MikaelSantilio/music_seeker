@@ -1,0 +1,2 @@
+# Runtime.txt para especificar versão do Python
+python-3.11.9

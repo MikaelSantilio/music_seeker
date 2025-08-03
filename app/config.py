@@ -26,12 +26,20 @@ class Settings:
     
     # API Configuration
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
-    API_PORT: int = int(os.getenv("API_PORT", "8000"))
+    API_PORT: int = int(os.getenv("PORT", os.getenv("API_PORT", "8000")))  # Digital Ocean usa PORT
     
     # Application Settings
     APP_NAME: str = "MusicSeeker"
-    APP_VERSION: str = "1.0.0"
+    APP_VERSION: str = os.getenv("APP_VERSION", "2.0.0")
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    
+    # Production settings
+    CORS_ORIGINS: list = [
+        "https://musicseeker-api-*.ondigitalocean.app",
+        "http://localhost:3000",
+        "http://localhost:8000"
+    ] if ENVIRONMENT == "production" else ["*"]
     
     def validate(self) -> None:
         """Validate required settings"""

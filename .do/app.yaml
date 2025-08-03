@@ -1,0 +1,73 @@
+name: musicseeker-api
+region: nyc
+
+services:
+- name: api
+  source_dir: /
+  github:
+    repo: MikaelSantilio/music_seeker
+    branch: master
+    deploy_on_push: true
+  
+  run_command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+  
+  environment_slug: python
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  
+  envs:
+  - key: DATABASE_URL
+    scope: RUN_TIME
+    type: SECRET
+  - key: OPENAI_API_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: API_HOST
+    scope: RUN_TIME
+    value: "0.0.0.0"
+  - key: API_PORT
+    scope: RUN_TIME
+    value: "8000"
+  - key: DEBUG
+    scope: RUN_TIME
+    value: "false"
+  - key: ENVIRONMENT
+    scope: RUN_TIME
+    value: "production"
+  - key: APP_VERSION
+    scope: RUN_TIME
+    value: "2.0.0"
+
+  http_port: 8000
+  
+  health_check:
+    http_path: /health
+    initial_delay_seconds: 60
+    period_seconds: 30
+    timeout_seconds: 10
+    success_threshold: 1
+    failure_threshold: 3
+
+  routes:
+  - path: /
+    preserve_path_prefix: true
+
+databases:
+- name: musicseeker-db
+  engine: PG
+  version: "15"
+  size: db-s-1vcpu-1gb
+  num_nodes: 1
+  
+  # Configurações específicas do PostgreSQL + pgvector
+  db_name: musicseeker
+  db_user: musicseeker_user
+  
+static_sites: []
+
+# Recursos adicionais para economizar
+alerts:
+- rule: CPU_UTILIZATION
+  value: 80
+- rule: MEM_UTILIZATION  
+  value: 80

@@ -122,12 +122,18 @@ Busque músicas usando **inteligência artificial** e **similaridade semântica*
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Add CORS middleware - CONFIGURAÇÃO MAIS SEGURA
+# Add CORS middleware - CONFIGURAÇÃO DINÂMICA
+cors_origins = settings.CORS_ORIGINS if settings.ENVIRONMENT == "production" else [
+    "http://localhost:3000", 
+    "http://localhost:8080", 
+    "http://localhost:8000"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080", "http://localhost:8000"],  # Adicionar próprio servidor
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],  # Apenas métodos necessários
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
