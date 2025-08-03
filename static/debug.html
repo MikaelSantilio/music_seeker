@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 MusicSeeker - Debug</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .search-container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            font-size: 16px; 
+            border: 2px solid #ddd; 
+            border-radius: 5px; 
+            margin-bottom: 15px;
+        }
+        button { 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            font-size: 16px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-right: 10px;
+        }
+        button:hover { background: #5a67d8; }
+        button:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+        }
+        #results { 
+            margin-top: 20px; 
+            padding: 20px; 
+            background: #f9f9f9; 
+            border-radius: 5px;
+            min-height: 50px;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <div class="search-container">
+        <h1>🎵 MusicSeeker - Debug Interface</h1>
+        
+        <div>
+            <input type="text" id="search-input" placeholder="Digite sua busca (ex: love and romance)">
+            <br>
+            <button id="search-btn">🔍 Buscar</button>
+            <button id="test-btn">🧪 Testar API</button>
+            <button id="clear-btn">🗑️ Limpar</button>
+        </div>
+        
+        <div id="results">
+            <div class="info">⏳ Digite algo e clique em Buscar</div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 Debug interface loaded');
+        
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const testBtn = document.getElementById('test-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const results = document.getElementById('results');
+        
+        console.log('Elements found:', { searchInput, searchBtn, testBtn, clearBtn, results });
+        
+        function log(message, type = 'info') {
+            console.log(message);
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        // Input handling
+        searchInput.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            searchBtn.disabled = !value;
+            log(`📝 Input: "${value}" | Button disabled: ${searchBtn.disabled}`);
+        });
+        
+        // Search function
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            
+            log(`🔍 Starting search for: "${query}"`);
+            
+            if (!query) {
+                log('❌ Empty query', 'error');
+                return;
+            }
+            
+            try {
+                log('📡 Making API request...');
+                
+                const response = await fetch('http://localhost:8000/api/v1/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, limit: 5 })
+                });
+                
+                log(`📡 Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                log(`✅ Success! Found ${data.results?.length || 0} results`, 'success');
+                
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach((result, i) => {
+                        const song = result.song || result;
+                        const similarity = result.similarity || result.similarity_score || 0;
+                        
+                        // Corrigir cálculo: similarity 0.39 = 61% match (boa similaridade)
+                        // Quanto MENOR a distância, MAIOR a similaridade
+                        const matchPercent = Math.round((1 - similarity) * 100);
+                        
+                        // Definir qualidade do match
+                        let quality = 'baixa';
+                        if (matchPercent >= 70) quality = 'excelente';
+                        else if (matchPercent >= 50) quality = 'boa';
+                        else if (matchPercent >= 30) quality = 'média';
+                        
+                        log(`🎵 ${i+1}. "${song.track_name}" by ${song.artist_name} (${matchPercent}% - ${quality})`, 'success');
+                    });
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test API connection
+        async function testAPI() {
+            log('🧪 Testing API connection...');
+            
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                log(`✅ API Health: ${data.status}`, 'success');
+                
+                const statsResponse = await fetch('http://localhost:8000/api/v1/stats');
+                const statsData = await statsResponse.json();
+                log(`📊 Database: ${statsData.total_songs} songs, ${statsData.total_artists} artists`, 'success');
+                
+            } catch (error) {
+                log(`❌ API Test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Event listeners
+        searchBtn.addEventListener('click', (e) => {
+            log('🔘 Search button clicked!');
+            performSearch();
+        });
+        
+        testBtn.addEventListener('click', (e) => {
+            log('🧪 Test button clicked!');
+            testAPI();
+        });
+        
+        clearBtn.addEventListener('click', (e) => {
+            log('🗑️ Clear button clicked!');
+            searchInput.value = '';
+            results.innerHTML = '<div class="info">⏳ Digite algo e clique em Buscar</div>';
+            searchBtn.disabled = true;
+        });
+        
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !searchBtn.disabled) {
+                log('⌨️ Enter key pressed!');
+                performSearch();
+            }
+        });
+        
+        // Initialize
+        searchBtn.disabled = true;
+        log('✅ Debug interface ready!', 'success');
+        
+        // Auto-test on load
+        setTimeout(() => {
+            log('🤖 Running auto-test...');
+            testAPI();
+        }, 1000);
+    </script>
+</body>
+</html>

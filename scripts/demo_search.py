@@ -54,18 +54,20 @@ def demo_search_functionality():
             # Show sample songs by artist
             print(f"\n👥 Available artists ({total_songs} songs):")
             
-            # Use SQLAlchemy properly
-            from sqlalchemy import text
-            result = db.execute(text("""
-                SELECT artist_name, COUNT(*) as song_count 
-                FROM songs 
-                GROUP BY artist_name 
-                ORDER BY COUNT(*) DESC 
-                LIMIT 10
-            """))
+            # Use SQLAlchemy ORM instead of raw SQL
+            from sqlalchemy import select, func
+            result = db.execute(
+                select(
+                    Song.artist_name,
+                    func.count().label('song_count')
+                )
+                .group_by(Song.artist_name)
+                .order_by(func.count().desc())
+                .limit(10)
+            )
             
             for row in result:
-                artist, count = row
+                artist, count = row.artist_name, row.song_count
                 print(f"   - {artist}: {count} songs")
                 
             # Show sample songs

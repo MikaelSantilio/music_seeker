@@ -4,7 +4,7 @@ Statistics API endpoints
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func
+from sqlalchemy import select, func, case
 from typing import List, Dict
 
 from app.db.database import get_db
@@ -36,45 +36,51 @@ async def get_statistics(db: Session = Depends(get_db)):
         songs_with_embeddings = db.query(Song).filter(Song.embedding.isnot(None)).count()
         embedding_coverage = round((songs_with_embeddings / total_songs * 100), 2) if total_songs > 0 else 0
         
-        # Top artists
-        top_artists_result = db.execute(text("""
-            SELECT artist_name, COUNT(*) as song_count 
-            FROM songs 
-            GROUP BY artist_name 
-            ORDER BY COUNT(*) DESC 
-            LIMIT 10
-        """))
+        # Top artists usando SQLAlchemy ORM - SEGURO
+        top_artists_query = select(
+            Song.artist_name,
+            func.count().label('song_count')
+        ).group_by(
+            Song.artist_name
+        ).order_by(
+            func.count().desc()
+        ).limit(10)
+        
+        top_artists_result = db.execute(top_artists_query)
         
         top_artists = [
             {
-                "artist_name": row[0],
-                "song_count": row[1]
+                "artist_name": row.artist_name,
+                "song_count": row.song_count
             }
             for row in top_artists_result
         ]
         
-        # Year statistics
-        year_stats = db.execute(text("""
-            SELECT 
-                MIN(year) as min_year,
-                MAX(year) as max_year,
-                COUNT(DISTINCT year) as unique_years
-            FROM songs 
-            WHERE year IS NOT NULL
-        """)).fetchone()
+        # Year statistics usando SQLAlchemy ORM - SEGURO
+        year_stats_query = select(
+            func.min(Song.year).label('min_year'),
+            func.max(Song.year).label('max_year'),
+            func.count(func.distinct(Song.year)).label('unique_years')
+        ).where(Song.year.is_not(None))
+        
+        year_stats_result = db.execute(year_stats_query).first()
         
         year_range = {
-            "min_year": year_stats[0] if year_stats[0] else None,
-            "max_year": year_stats[1] if year_stats[1] else None,
-            "unique_years": year_stats[2] if year_stats[2] else 0
+            "min_year": year_stats_result.min_year if year_stats_result.min_year else None,
+            "max_year": year_stats_result.max_year if year_stats_result.max_year else None,
+            "unique_years": year_stats_result.unique_years if year_stats_result.unique_years else 0
         }
         
-        # Average lyrics length
-        avg_lyrics_length = db.execute(text("""
-            SELECT AVG(LENGTH(lyrics)) as avg_length 
-            FROM songs 
-            WHERE lyrics IS NOT NULL AND lyrics != ''
-        """)).fetchone()[0]
+        # Average lyrics length usando SQLAlchemy ORM - SEGURO
+        avg_length_query = select(
+            func.avg(func.length(Song.lyrics)).label('avg_length')
+        ).where(
+            Song.lyrics.is_not(None),
+            Song.lyrics != ''
+        )
+        
+        avg_lyrics_result = db.execute(avg_length_query).first()
+        avg_lyrics_length = float(avg_lyrics_result.avg_length) if avg_lyrics_result.avg_length else 0.0
         
         return StatsResponse(
             total_songs=total_songs,
@@ -101,28 +107,32 @@ async def get_artist_statistics(
     - **limit**: Maximum number of artists to return
     """
     try:
-        result = db.execute(text("""
-            SELECT 
-                artist_name,
-                COUNT(*) as song_count,
-                MIN(year) as earliest_year,
-                MAX(year) as latest_year,
-                AVG(LENGTH(lyrics)) as avg_lyrics_length
-            FROM songs 
-            WHERE lyrics IS NOT NULL AND lyrics != ''
-            GROUP BY artist_name 
-            ORDER BY COUNT(*) DESC 
-            LIMIT :limit
-        """), {"limit": limit})
+        # Artist statistics usando SQLAlchemy ORM - SEGURO
+        artist_stats_query = select(
+            Song.artist_name,
+            func.count().label('song_count'),
+            func.min(Song.year).label('earliest_year'),
+            func.max(Song.year).label('latest_year'),
+            func.avg(func.length(Song.lyrics)).label('avg_lyrics_length')
+        ).where(
+            Song.lyrics.is_not(None),
+            Song.lyrics != ''
+        ).group_by(
+            Song.artist_name
+        ).order_by(
+            func.count().desc()
+        ).limit(limit)
+        
+        result = db.execute(artist_stats_query)
         
         artists = []
         for row in result:
             artists.append({
-                "artist_name": row[0],
-                "song_count": row[1],
-                "earliest_year": row[2],
-                "latest_year": row[3],
-                "avg_lyrics_length": round(row[4], 2) if row[4] else 0
+                "artist_name": row.artist_name,
+                "song_count": row.song_count,
+                "earliest_year": row.earliest_year,
+                "latest_year": row.latest_year,
+                "avg_lyrics_length": round(float(row.avg_lyrics_length), 2) if row.avg_lyrics_length else 0
             })
         
         return {
@@ -140,23 +150,24 @@ async def get_year_statistics(db: Session = Depends(get_db)):
     Get statistics by year
     """
     try:
-        result = db.execute(text("""
-            SELECT 
-                year,
-                COUNT(*) as song_count,
-                COUNT(DISTINCT artist_name) as artist_count
-            FROM songs 
-            WHERE year IS NOT NULL
-            GROUP BY year 
-            ORDER BY year DESC
-        """))
+        # Use SQLAlchemy ORM instead of raw SQL
+        result = db.execute(
+            select(
+                Song.year,
+                func.count().label('song_count'),
+                func.count(func.distinct(Song.artist_name)).label('artist_count')
+            )
+            .where(Song.year.is_not(None))
+            .group_by(Song.year)
+            .order_by(Song.year.desc())
+        )
         
         years = []
         for row in result:
             years.append({
-                "year": row[0],
-                "song_count": row[1],
-                "artist_count": row[2]
+                "year": row.year,
+                "song_count": row.song_count,
+                "artist_count": row.artist_count
             })
         
         return {
@@ -177,14 +188,14 @@ async def get_embedding_statistics(db: Session = Depends(get_db)):
         embedding_service = EmbeddingService()
         stats = embedding_service.get_embedding_statistics(db)
         
-        # Additional embedding stats
-        result = db.execute(text("""
-            SELECT 
-                COUNT(CASE WHEN embedding IS NOT NULL THEN 1 END) as with_embeddings,
-                COUNT(CASE WHEN embedding IS NULL THEN 1 END) as without_embeddings,
-                COUNT(*) as total
-            FROM songs
-        """)).fetchone()
+        # Additional embedding stats using SQLAlchemy ORM
+        result = db.execute(
+            select(
+                func.count(case((Song.embedding.is_not(None), 1))).label('with_embeddings'),
+                func.count(case((Song.embedding.is_(None), 1))).label('without_embeddings'),
+                func.count().label('total')
+            )
+        ).fetchone()
         
         return {
             **stats,

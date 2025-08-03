@@ -5,9 +5,12 @@ Main FastAPI application for MusicSeeker
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uvicorn
+import os
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -122,7 +125,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Add CORS middleware - CONFIGURAÇÃO MAIS SEGURA
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080"],  # Específicos
+    allow_origins=["http://localhost:3000", "http://localhost:8080", "http://localhost:8000"],  # Adicionar próprio servidor
     allow_credentials=True,
     allow_methods=["GET", "POST"],  # Apenas métodos necessários
     allow_headers=["*"],
@@ -133,10 +136,36 @@ app.middleware("http")(limit_request_size)
 app.middleware("http")(add_process_time_header)
 app.add_middleware(SecurityMiddleware)
 
+# Mount static files
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 # Include API routes
 app.include_router(search.router, prefix="/api/v1", tags=["🔍 Busca Semântica"])
 app.include_router(songs.router, prefix="/api/v1", tags=["🎵 Músicas"])
 app.include_router(stats.router, prefix="/api/v1", tags=["📊 Estatísticas"])
+
+
+# Serve the web interface
+@app.get("/search", tags=["🏠 Sistema"], summary="🔍 Interface de Busca Web")
+async def search_interface():
+    """Interface web para busca semântica de músicas"""
+    static_file = os.path.join(static_dir, "index.html")
+    if os.path.exists(static_file):
+        return FileResponse(static_file)
+    else:
+        raise HTTPException(status_code=404, detail="Interface web não encontrada")
+
+
+@app.get("/debug", tags=["🏠 Sistema"], summary="🐛 Interface de Debug")
+async def debug_interface():
+    """Interface de debug para testar a API"""
+    debug_file = os.path.join(static_dir, "debug.html")
+    if os.path.exists(debug_file):
+        return FileResponse(debug_file)
+    else:
+        raise HTTPException(status_code=404, detail="Interface de debug não encontrada")
 
 
 @app.get("/", tags=["🏠 Sistema"], summary="🏠 Página Inicial da API")
@@ -190,9 +219,9 @@ async def health_check(db: Session = Depends(get_db)):
     Health check endpoint
     """
     try:
-        # Test database connection
-        from sqlalchemy import text
-        result = db.execute(text("SELECT 1"))
+        # Test database connection using SQLAlchemy ORM
+        from sqlalchemy import select, literal
+        result = db.execute(select(literal(1)))
         return {
             "status": "healthy",
             "database": "connected",

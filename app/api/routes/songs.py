@@ -4,7 +4,7 @@ Songs API endpoints
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import select, func
 from typing import List, Optional
 import math
 
@@ -107,18 +107,21 @@ async def list_artists(
     - **limit**: Maximum number of artists to return
     """
     try:
-        result = db.execute(text("""
-            SELECT artist_name, COUNT(*) as song_count 
-            FROM songs 
-            GROUP BY artist_name 
-            ORDER BY COUNT(*) DESC 
-            LIMIT :limit
-        """), {"limit": limit})
+        # Use SQLAlchemy ORM instead of raw SQL
+        result = db.execute(
+            select(
+                Song.artist_name,
+                func.count().label('song_count')
+            )
+            .group_by(Song.artist_name)
+            .order_by(func.count().desc())
+            .limit(limit)
+        )
         
         artists = [
             {
-                "artist_name": row[0],
-                "song_count": row[1]
+                "artist_name": row.artist_name,
+                "song_count": row.song_count
             }
             for row in result
         ]
