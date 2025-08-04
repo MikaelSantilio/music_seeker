@@ -2,7 +2,7 @@
 
   ![MusicSeeker Interface](/static/thumb.png)
 
-**MusicSeeker** é uma API que permite buscar músicas usando **busca semântica baseada em embeddings da OpenAI**, feita utilizando vibe coding, que usa um dataset local de letras de músicas.
+**MusicSeeker** é uma API que permite buscar músicas usando **busca semântica baseada em embeddings da OpenAI**, usando um dataset local de letras de músicas.
 
 ## Características
 
