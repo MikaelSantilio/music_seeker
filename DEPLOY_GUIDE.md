@@ -241,6 +241,18 @@ Apps > Your App > Settings > Environment Variables
 # App detecta tabelas existentes e pula criação se erro de permissão
 ```
 
+### **Web Interface Not Found:**
+```bash
+# Error: "Interface web não encontrada"
+# Causa: Arquivos estáticos não copiados para container Docker
+# Solução: ✅ Já corrigida no Dockerfile e main.py
+
+# Interface acessível em:
+# https://your-app.ondigitalocean.app/        (principal)
+# https://your-app.ondigitalocean.app/search  (alternativa)
+# https://your-app.ondigitalocean.app/debug   (debug)
+```
+
 ### **Runtime Errors:**
 ```bash
 # Verificar runtime logs:
