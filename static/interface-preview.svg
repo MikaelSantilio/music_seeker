@@ -1,0 +1,49 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="400" fill="url(#bg)"/>
+  
+  <!-- Header -->
+  <text x="400" y="60" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" fill="white">
+    🎵 MusicSeeker
+  </text>
+  <text x="400" y="85" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#e0e7ff">
+    Busca Semântica de Músicas com Inteligência Artificial
+  </text>
+  
+  <!-- Search Box -->
+  <rect x="100" y="120" width="600" height="50" rx="25" fill="white" opacity="0.95"/>
+  <text x="130" y="150" font-family="Arial, sans-serif" font-size="16" fill="#666">
+    nostalgia and memories
+  </text>
+  
+  <!-- Search Button -->
+  <rect x="330" y="190" width="140" height="40" rx="20" fill="#4f46e5"/>
+  <text x="400" y="215" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="white">
+    Buscar Músicas
+  </text>
+  
+  <!-- Results -->
+  <rect x="100" y="260" width="600" height="80" rx="10" fill="white" opacity="0.95"/>
+  <text x="120" y="285" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#333">
+    🎵 Memories (Cut Copy Remix) - Maroon 5
+  </text>
+  <text x="120" y="305" font-family="Arial, sans-serif" font-size="12" fill="#666">
+    "drop bring back memories memories bring back memories..."
+  </text>
+  <rect x="650" y="275" width="40" height="25" rx="12" fill="#f59e0b"/>
+  <text x="670" y="292" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="white">
+    94%
+  </text>
+  
+  <!-- Footer -->
+  <text x="400" y="380" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#e0e7ff">
+    Interface de busca semântica com IA - Encontre músicas por significado!
+  </text>
+</svg>

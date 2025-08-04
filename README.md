@@ -1,5 +1,7 @@
 # MusicSeeker 🎵
 
+  ![MusicSeeker Interface](/static/thumb.png)
+
 **MusicSeeker** é uma API que permite buscar músicas usando **busca semântica baseada em embeddings da OpenAI**, usando um dataset local de letras de músicas.
 
 ## 🚀 Características
@@ -121,5 +123,3 @@ pytest tests/ -v
 MIT License - veja LICENSE para detalhes.
 
 ---
-
-**Desenvolvido com ❤️ usando Python, FastAPI e OpenAI**
