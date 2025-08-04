@@ -224,6 +224,23 @@ Apps > Your App > Settings > Environment Variables
 # DATABASE_URL=postgresql://user:pass@host:25060/musicseeker
 ```
 
+### **Database Permission Errors:**
+```bash
+# Error: permission denied for schema public
+# Causa: Usuário sem permissão para criar tabelas
+# Soluções:
+
+# 1. Criar tabelas manualmente via console:
+# Database > Console > Execute scripts/create_tables.sql
+
+# 2. Ou conceder permissões ao usuário:
+# GRANT ALL PRIVILEGES ON SCHEMA public TO your_username;
+# GRANT CREATE ON SCHEMA public TO your_username;
+
+# 3. ✅ Solução automática implementada:
+# App detecta tabelas existentes e pula criação se erro de permissão
+```
+
 ### **Runtime Errors:**
 ```bash
 # Verificar runtime logs:

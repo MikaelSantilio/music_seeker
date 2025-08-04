@@ -2,6 +2,7 @@
 Main FastAPI application for MusicSeeker
 """
 
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,10 +18,13 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.db.database import get_db, create_tables
+from app.db.database import get_db, create_tables, test_database_connection
 from app.api.routes import songs, search, stats
 from app.middleware.security import SecurityMiddleware, add_process_time_header, limit_request_size
 from app.utils.logging import setup_logging
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -28,7 +32,20 @@ async def lifespan(app: FastAPI):
     """Lifespan events for FastAPI application"""
     # Startup
     setup_logging()  # Initialize secure logging
-    create_tables()
+    
+    # Test database connection
+    if not test_database_connection():
+        logger.error("Failed to connect to database during startup")
+        raise Exception("Database connection failed")
+    
+    # Try to create tables (will skip if they exist or handle permission errors)
+    try:
+        create_tables()
+        logger.info("Database initialization completed")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        # Don't raise here - let the app continue if tables might exist
+        
     yield
     # Shutdown (if needed)
 
