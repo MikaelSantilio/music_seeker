@@ -163,6 +163,11 @@ app.add_middleware(SecurityMiddleware)
 static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+else:
+    # Alternative path for Docker container
+    static_dir = "/app/static"
+    if os.path.exists(static_dir):
+        app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Include API routes
 app.include_router(search.router, prefix="/api/v1", tags=["🔍 Busca Semântica"])
@@ -174,7 +179,12 @@ app.include_router(stats.router, prefix="/api/v1", tags=["📊 Estatísticas"])
 @app.get("/search", tags=["🏠 Sistema"], summary="🔍 Interface de Busca Web")
 async def search_interface():
     """Interface web para busca semântica de músicas"""
-    static_file = os.path.join(static_dir, "index.html")
+    # Try local development path first
+    static_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "index.html")
+    if not os.path.exists(static_file):
+        # Try Docker container path
+        static_file = "/app/static/index.html"
+    
     if os.path.exists(static_file):
         return FileResponse(static_file)
     else:
@@ -184,56 +194,46 @@ async def search_interface():
 @app.get("/debug", tags=["🏠 Sistema"], summary="🐛 Interface de Debug")
 async def debug_interface():
     """Interface de debug para testar a API"""
-    debug_file = os.path.join(static_dir, "debug.html")
+    # Try local development path first
+    debug_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "debug.html")
+    if not os.path.exists(debug_file):
+        # Try Docker container path
+        debug_file = "/app/static/debug.html"
+    
     if os.path.exists(debug_file):
         return FileResponse(debug_file)
     else:
         raise HTTPException(status_code=404, detail="Interface de debug não encontrada")
 
 
-@app.get("/", tags=["🏠 Sistema"], summary="🏠 Página Inicial da API")
+@app.get("/", tags=["🏠 Sistema"], summary="🏠 Interface Web Principal")
 async def root():
     """
-    ## 🏠 Bem-vindo ao MusicSeeker API!
-    
-    ### 🎵 O que é o MusicSeeker?
-    
-    Uma API de busca semântica de músicas que usa **inteligência artificial** para encontrar
-    músicas baseada no **significado** e **sentimento** da sua consulta, não apenas palavras-chave!
-    
-    ### 🚀 Recursos Principais
-    
-    - **🔍 Busca Semântica**: Procure por "nostalgia" e encontre "Memories" do Maroon 5
-    - **🤖 IA Integrada**: Powered by OpenAI text-embedding-3-small  
-    - **⚡ Ultra Rápido**: Respostas em milissegundos
-    - **🛡️ Seguro**: Rate limiting e validação robusta
-    - **📊 Analytics**: Estatísticas detalhadas da biblioteca
-    
-    ### 📚 Dados Disponíveis
-    
-    - **5,949 músicas** com letras completas
-    - **21 artistas** populares (Ed Sheeran, Taylor Swift, etc.)
-    - **100% cobertura** de embeddings vetoriais
-    
-    ### 🔗 Links Úteis
-    
-    - **📖 Documentação Interativa**: [/docs](/docs) 
-    - **📘 Documentação Alternativa**: [/redoc](/redoc)
-    - **🔍 Fazer uma Busca**: [POST /api/v1/search](/docs#/🔍%20Busca%20Semântica/semantic_search_api_v1_search_post)
-    - **📊 Ver Estatísticas**: [GET /api/v1/stats](/docs#/📊%20Estatísticas)
+    Interface web principal do MusicSeeker - busca semântica de músicas
     """
-    return {
-        "message": "Welcome to MusicSeeker API! 🎵",
-        "description": "Semantic music search using OpenAI embeddings",
-        "version": settings.APP_VERSION,
-        "docs": "/docs",
-        "redoc": "/redoc",
-        "endpoints": {
-            "songs": "/api/v1/songs",
-            "search": "/api/v1/search",
-            "stats": "/api/v1/stats"
+    # Try local development path first
+    static_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "index.html")
+    if not os.path.exists(static_file):
+        # Try Docker container path
+        static_file = "/app/static/index.html"
+    
+    if os.path.exists(static_file):
+        return FileResponse(static_file)
+    else:
+        # Fallback to API info if static files not found
+        return {
+            "message": "Welcome to MusicSeeker API! 🎵",
+            "description": "Semantic music search using OpenAI embeddings",
+            "version": settings.APP_VERSION,
+            "web_interface": "/search",
+            "docs": "/docs",
+            "redoc": "/redoc",
+            "endpoints": {
+                "songs": "/api/v1/songs",
+                "search": "/api/v1/search", 
+                "stats": "/api/v1/stats"
+            }
         }
-    }
 
 
 @app.get("/health", tags=["Health"])
