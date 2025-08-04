@@ -2,16 +2,16 @@ name: musicseeker-api
 region: nyc
 
 services:
-- name: api
+- name: web
+  # Use Dockerfile for better control
   source_dir: /
+  dockerfile_path: Dockerfile
+  
   github:
     repo: MikaelSantilio/music_seeker
     branch: master
     deploy_on_push: true
   
-  run_command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-  
-  environment_slug: python
   instance_count: 1
   instance_size_slug: basic-xxs
   
@@ -27,7 +27,10 @@ services:
     value: "0.0.0.0"
   - key: API_PORT
     scope: RUN_TIME
-    value: "8000"
+    value: "8080"
+  - key: PORT
+    scope: RUN_TIME
+    value: "8080"
   - key: DEBUG
     scope: RUN_TIME
     value: "false"
@@ -38,7 +41,7 @@ services:
     scope: RUN_TIME
     value: "2.0.0"
 
-  http_port: 8000
+  http_port: 8080
   
   health_check:
     http_path: /health
@@ -55,7 +58,7 @@ services:
 databases:
 - name: musicseeker-db
   engine: PG
-  version: "15"
+  version: "17"
   size: db-s-1vcpu-1gb
   num_nodes: 1
   
