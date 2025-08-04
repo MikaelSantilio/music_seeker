@@ -23,8 +23,10 @@ packaging==25.0
 pandas==2.2.3
 pgvector==0.3.5
 pluggy==1.6.0
+# PostgreSQL drivers (both versions for compatibility)
 psycopg==3.2.3
 psycopg-binary==3.2.3
+psycopg2-binary==2.9.9
 pydantic==2.9.2
 pydantic_core==2.23.4
 pytest==8.3.3

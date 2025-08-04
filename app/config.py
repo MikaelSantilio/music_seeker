@@ -14,10 +14,20 @@ class Settings:
     """Application settings from environment variables"""
     
     # Database Configuration
-    DATABASE_URL: str = os.getenv(
+    _database_url: str = os.getenv(
         "DATABASE_URL", 
         "postgresql+psycopg://musicseeker:musicseeker123@localhost:5432/musicseeker"
     )
+    
+    @property
+    def DATABASE_URL(self) -> str:
+        """
+        Convert postgresql:// to postgresql+psycopg:// for compatibility
+        Digital Ocean injects postgresql:// but we use psycopg (v3)
+        """
+        if self._database_url.startswith("postgresql://"):
+            return self._database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return self._database_url
     
     # OpenAI Configuration
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")

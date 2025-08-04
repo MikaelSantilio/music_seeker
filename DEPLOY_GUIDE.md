@@ -208,6 +208,22 @@ Apps > Your App > Build Logs
 - Database connection
 ```
 
+### **psycopg2 Module Error:**
+```bash
+# Error: ModuleNotFoundError: No module named 'psycopg2'
+# Causa: Digital Ocean injeta postgresql:// mas usamos psycopg3
+# Solução: ✅ Já corrigida no config.py (auto-conversão)
+```
+
+### **Database Connection Issues:**
+```bash
+# Verificar se DATABASE_URL está sendo injetada:
+Apps > Your App > Settings > Environment Variables
+
+# Deve aparecer algo como:
+# DATABASE_URL=postgresql://user:pass@host:25060/musicseeker
+```
+
 ### **Runtime Errors:**
 ```bash
 # Verificar runtime logs:
