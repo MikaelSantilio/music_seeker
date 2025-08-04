@@ -2,17 +2,16 @@
 
   ![MusicSeeker Interface](/static/thumb.png)
 
-**MusicSeeker** é uma API que permite buscar músicas usando **busca semântica baseada em embeddings da OpenAI**, usando um dataset local de letras de músicas.
+**MusicSeeker** é uma API que permite buscar músicas usando **busca semântica baseada em embeddings da OpenAI**, feita utilizando vibe coding, que usa um dataset local de letras de músicas.
 
-## 🚀 Características
+## Características
 
 - **Busca Semântica**: Encontre músicas por significado, não apenas palavras exatas
 - **Dataset Local**: 21 artistas populares com centenas de músicas
-- **API FastAPI**: Interface moderna e documentada automaticamente
 - **PostgreSQL + pgvector**: Busca vetorial eficiente
 - **Docker**: Fácil deploy e desenvolvimento
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 music_seeker_v2/
@@ -31,7 +30,7 @@ music_seeker_v2/
 └── README.md
 ```
 
-## 🛠️ Setup Desenvolvimento
+## Setup Desenvolvimento
 
 ### 1. Clonar e preparar ambiente
 
@@ -66,7 +65,7 @@ Isso irá subir:
 - **Banco PostgreSQL**: localhost:5432
 - **pgAdmin**: http://localhost:8080
 
-## 📊 Preparar Dados
+## Preparar Dados
 
 ### 1. Carregar dataset no banco
 
@@ -80,7 +79,7 @@ python scripts/load_data.py
 python scripts/generate_embeddings.py
 ```
 
-## 🔍 Usando a API
+## Usando a API
 
 ### Documentação Interativa
 - **Swagger UI**: http://localhost:8000/docs
@@ -105,20 +104,20 @@ curl -X POST "http://localhost:8000/search" \
 curl "http://localhost:8000/stats"
 ```
 
-## 🎯 Artistas no Dataset
+## Artistas no Dataset
 
 O dataset inclui letras de 21 artistas populares:
 - Taylor Swift, Drake, BTS, Ariana Grande
 - Beyoncé, Billie Eilish, Ed Sheeran, Eminem
 - E mais 13 artistas...
 
-## 🧪 Testes
+## Testes
 
 ```bash
 pytest tests/ -v
 ```
 
-## 📝 Licença
+## Licença
 
 MIT License - veja LICENSE para detalhes.
 
